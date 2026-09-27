@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MC Command Forge</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#e6eee2, #10150f);
+    --panel: light-dark(#f5f8f2, #1a2118);
+    --panel2: light-dark(#e9efe6, #202a1d);
+    --text: light-dark(#162013, #eef6e9);
+    --muted: light-dark(#5c6958, #9fac98);
+    --line: light-dark(#c4d0be, #35422f);
+    --accent: #58a33a;
+    --accent2: #8bc34a;
+    --dirt: #8b5a2b;
+    --stone: #737a72;
+    --gold: #e3ba42;
+    --danger: #bd5b50;
+    --shadow: rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  button, input, textarea, select { font: inherit; }
+  button { cursor: pointer; }
+  .app-root {
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--text);
+    padding: 0 0 28px;
+    overflow-x: hidden;
+  }
+  .skyline {
+    height: 10px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.08) 0 25%, transparent 25% 50%, rgba(255,255,255,.08) 50% 75%, transparent 75%),
+      #4c9d37;
+    image-rendering: pixelated;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 15px clamp(16px, 4vw, 52px);
+    background: color-mix(in srgb, var(--panel) 94%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+  .pickaxe {
+    width: 42px; height: 42px; flex: 0 0 42px;
+    border: 3px solid #2d351f;
+    box-shadow: inset 0 -5px rgba(0,0,0,.16), 3px 3px 0 rgba(0,0,0,.22);
+    background:
+      linear-gradient(135deg, transparent 0 22%, #d7d9d4 22% 34%, #9aa09a 34% 52%, transparent 52%),
+      linear-gradient(#6da8dd 0 18%, #6da8dd 18% 24%, transparent 24% 100%),
+      #8b5a2b;
+    image-rendering: pixelated;
+  }
+  .brand h1 { font-size: 18px; margin: 0; letter-spacing: .5px; }
+  .brand small { color: var(--muted); display:block; margin-top:2px; }
+  .status-chip {
+    border: 1px solid var(--line); background: var(--panel2); color: var(--muted);
+    padding: 8px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  }
+  .shell { width: min(1220px, calc(100% - 28px)); margin: 24px auto 0; }
+  .hero {
+    position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(97,166,65,.12), transparent 68%),
+      var(--panel);
+    box-shadow: 0 18px 50px var(--shadow);
+    padding: clamp(22px, 4vw, 38px);
+  }
+  .hero::before {
+    content:""; position:absolute; inset:auto -30px -50px auto; width:220px; height:180px; opacity:.14;
+    background: conic-gradient(from 90deg, #6b8e23 0 25%, #8b5a2b 25% 50%, #777 50% 75%, #4e7b2d 75% 100%);
+    clip-path: polygon(24% 0,100% 0,100% 100%,0 100%,0 28%);
+  }
+  .eyebrow { color: var(--accent2); font-size: 12px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
+  .hero h2 { font-size: clamp(28px, 5vw, 48px); line-height: 1; margin: 9px 0 11px; max-width: 740px; letter-spacing:-1.7px; }
+  .hero p { max-width: 720px; margin:0; color: var(--muted); line-height:1.65; }
+  .version-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; position:relative; z-index:1; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel2); }
+  .seg button { border:0; padding:10px 14px; background:transparent; color:var(--muted); font-weight:900; }
+  .seg button.active { color:#fff; background:var(--accent); }
+  .main-grid { display:grid; grid-template-columns:minmax(0, 1.08fr) minmax(330px,.92fr); gap:16px; margin-top:16px; }
+  .card { border:1px solid var(--line); border-radius:16px; background:var(--panel); box-shadow:0 10px 30px rgba(0,0,0,.08); overflow:hidden; }
+  .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:18px 18px 14px; border-bottom:1px solid var(--line); }
+  .card-head h3 { margin:0; font-size:16px; }
+  .card-head p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+  .body { padding:18px; }
+  .tabbar { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
+  .tab { border:1px solid var(--line); background:var(--panel2); color:var(--muted); padding:11px 8px; border-radius:10px; font-weight:900; }
+  .tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .field { margin-bottom:15px; }
+  .field label { display:flex; justify-content:space-between; gap:12px; font-size:12px; font-weight:900; margin-bottom:7px; }
+  .field label span { color:var(--muted); font-weight:700; }
+  input[type=text], input[type=number], select, textarea {
+    width:100%; border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:10px;
+    outline:none; padding:11px 12px;
+  }
+  textarea { min-height:88px; resize:vertical; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow:0 0 0 3px rgba(88,163,58,.16); }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .three { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .format { display:flex; flex-wrap:wrap; gap:7px; }
+  .fmt {
+    min-width:40px; height:38px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); color:var(--text); font-weight:1000;
+  }
+  .fmt.active { background: #2f5424; color:#fff; border-color:#5fa442; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+  .color-grid { display:flex; flex-wrap:wrap; gap:7px; }
+  .swatch {
+    width:27px; height:27px; border-radius:7px; border:2px solid rgba(255,255,255,.38); box-shadow:0 0 0 1px rgba(0,0,0,.2); 
+  }
+  .swatch.active { outline:3px solid var(--text); outline-offset:2px; }
+  .range-row { display:grid; grid-template-columns:1fr 76px; align-items:center; gap:11px; }
+  input[type=range] { accent-color:var(--accent); width:100%; }
+  .num { text-align:center; padding:7px 8px !important; }
+  .preview-wrap { padding:18px; }
+  .mc-screen {
+    min-height:370px; border-radius:14px; border:1px solid #2b3328; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 50% 14%, rgba(255,255,255,.2), transparent 20%),
+      linear-gradient(180deg,#68a8d4 0 48%,#4f842d 48% 69%,#72502d 69% 100%);
+  }
+  .mc-screen::before { content:""; position:absolute; inset:0; opacity:.18; background-image:linear-gradient(90deg, rgba(255,255,255,.14) 1px, transparent 1px),linear-gradient(rgba(0,0,0,.12) 1px, transparent 1px); background-size:24px 24px; }
+  .cloud { position:absolute; width:84px; height:26px; background:rgba(255,255,255,.78); image-rendering:pixelated; filter:drop-shadow(3px 3px rgba(0,0,0,.08)); }
+  .cloud.c1 { left:8%; top:12%; } .cloud.c2 { right:13%; top:22%; width:112px; }
+  .panel-info { position:absolute; top:13px; left:13px; z-index:2; font-size:10px; background:rgba(15,20,15,.6); color:#fff; padding:7px 9px; border-radius:8px; backdrop-filter:blur(5px); }
+  .game-ui { z-index:2; text-align:center; width:100%; padding:25px; }
+  .title-text { font-weight:900; font-size:clamp(27px,5vw,44px); text-shadow:3px 3px 0 rgba(0,0,0,.72); line-height:1.08; word-break:break-word; }
+  .subtitle-text { margin-top:12px; font-size:clamp(14px,2.3vw,20px); text-shadow:2px 2px 0 rgba(0,0,0,.75); line-height:1.25; word-break:break-word; }
+  .chat-preview { position:absolute; left:16px; right:16px; bottom:26px; text-align:left; color:#fff; text-shadow:2px 2px 0 #1a1a1a; font-size:14px; }
+  .chat-preview .name { color:#55ff55; font-weight:800; }
+  .chat-badge { position:absolute; right:13px; bottom:13px; font-size:10px; color:#e8efdf; background:rgba(20,27,19,.58); border:1px solid rgba(255,255,255,.18); padding:6px 8px; border-radius:7px; }
+  .output { margin-top:16px; }
+  .output-box { border:1px solid var(--line); border-radius:11px; background:#0f120f; color:#d9efd0; padding:14px; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; overflow:auto; white-space:pre-wrap; word-break:break-word; max-height:220px; }
+  .command-line { display:grid; grid-template-columns:34px minmax(0,1fr) auto; gap:8px; align-items:start; margin-bottom:8px; padding:9px 10px; border:1px solid #283326; border-radius:9px; background:#131713; }
+  .command-prefix { color:#7ad45b; user-select:none; font-weight:1000; text-align:center; }
+  .command-text { min-width:0; overflow-wrap:anywhere; }
+  .command-copy { border:1px solid #3b4a36; background:#1b2419; color:#d9efd0; border-radius:7px; padding:5px 7px; font-size:10px; font-weight:900; }
+  .command-meta { grid-column:2 / -1; display:flex; flex-wrap:wrap; gap:6px; margin-top:-2px; }
+  #output:has(.command-line:only-child) .command-meta { display:none; }
+  .command-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 6px; border-radius:999px; background:#253322; color:#a9c69f; font:900 9px/1 ui-sans-serif,system-ui,sans-serif; }
+  .block-guide { margin-top:12px; border:1px solid var(--line); border-radius:12px; background:var(--panel2); overflow:hidden; }
+  .block-guide-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 12px; border-bottom:1px solid var(--line); }
+  .block-guide-head strong { font-size:12px; }
+  .block-guide-head span { color:var(--muted); font-size:10px; }
+  .block-flow { display:flex; flex-wrap:wrap; align-items:center; gap:7px; padding:12px; }
+  .block-step { min-width:155px; flex:1; border:1px solid #394834; border-radius:9px; background:#161d15; padding:9px; }
+  .block-step .step-top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .block-step .step-no { width:22px; height:22px; display:grid; place-items:center; border-radius:6px; background:#5a933f; color:#fff; font-size:10px; font-weight:1000; }
+  .block-step .step-type { color:#dcebd7; font-size:10px; font-weight:900; }
+  .block-step .step-mode { color:#8fa48b; font-size:9px; margin-top:4px; }
+  .block-settings { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .block-setting { padding:4px 6px; border-radius:6px; background:#202a1e; color:#b4c9ac; font:800 9px/1.1 ui-sans-serif,system-ui,sans-serif; }
+  .flow-arrow { color:#86ba70; font-size:18px; font-weight:1000; }
+  .guide-tip { padding:0 12px 12px; color:var(--muted); font-size:10px; line-height:1.55; }
+  .copyrow { display:flex; gap:8px; margin-top:10px; }
+  .btn { border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-weight:900; background:var(--panel2); color:var(--text); }
+  .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); flex:1; }
+  .btn.gold { background:var(--gold); color:#17150b; border-color:#cc9e22; }
+  .quick { display:flex; flex-wrap:wrap; gap:7px; }
+  .quick button { padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); font-size:11px; font-weight:800; }
+  .note { margin-top:12px; font-size:11px; line-height:1.5; color:var(--muted); }
+  .footer { text-align:center; color:var(--muted); padding:21px 12px 0; font-size:11px; }
+  .toast { position:fixed; left:50%; bottom:23px; transform:translateX(-50%) translateY(18px); opacity:0; pointer-events:none; transition:.18s ease; background:#1e281c; color:#fff; border:1px solid #55734d; padding:10px 14px; border-radius:10px; z-index:50; box-shadow:0 12px 26px rgba(0,0,0,.3); font-weight:800; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  @media (max-width:900px) { .main-grid { grid-template-columns:1fr; } }
+  @media (max-width:620px) { .shell { width:min(100% - 18px,1220px); margin-top:12px; } .hero { border-radius:14px; } .three { grid-template-columns:1fr; } .topbar { padding:12px 12px; } .status-chip { display:none; } }
+</style>
+</head>
+<body>
+<div class="app-root" id="app">
+  <div class="skyline"></div>
+  <header class="topbar">
+    <div class="brand"><div class="pickaxe"></div><div><h1>MC COMMAND FORGE</h1><small>서버 운영자용 명령어 제작소</small></div></div>
+    <div class="status-chip" id="modeChip">JAVA · SNBT</div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">CRAFT · FORMAT · COPY</div>
+      <h2>명령어, 이제 블록 조립하듯 만드세요.</h2>
+      <p>타이틀, 서브타이틀, 액션바, 채팅 메시지를 마인크래프트 화면으로 확인하면서 바로 복사할 수 있습니다.</p>
+      <div class="version-row">
+        <div class="seg" aria-label="플랫폼 선택"><button class="active" data-platform="java">Java</button><button data-platform="bedrock">Bedrock</button></div>
+        <div class="seg" aria-label="대상 선택"><button class="active" data-target="@a" title="모든 플레이어">@a</button><button data-target="@p" title="가장 가까운 플레이어">@p</button><button data-target="@s" title="명령어를 실행한 자신">@s</button><button data-target="@r" title="무작위 플레이어">@r</button></div>
+      </div>
+    </section>
+
+    <div class="main-grid">
+      <section class="card">
+        <div class="card-head"><div><h3>⚒ 명령어 설계대</h3><p id="syntaxHint">Java 1.21.5+ SNBT 텍스트 기준</p></div><button class="btn" id="resetBtn">초기화</button></div>
+        <div class="body">
+          <div class="tabbar"><button class="tab active" data-type="title">타이틀</button><button class="tab" data-type="subtitle">서브타이틀</button><button class="tab" data-type="chat">채팅</button></div>
+          <div class="field"><label>메시지 <span>ENTER = 줄바꿈</span></label><textarea id="textInput">환영합니다!</textarea></div>
+          <div class="two">
+            <div class="field"><label>색상</label><select id="colorSelect"><option value="white">흰색</option><option value="red">빨강</option><option value="green">초록</option><option value="aqua">하늘색</option><option value="blue">파랑</option><option value="yellow">노랑</option><option value="gold">금색</option><option value="light_purple">연보라</option><option value="dark_purple">보라</option><option value="gray">회색</option><option value="dark_gray">짙은 회색</option></select></div>
+            <div class="field"><label>빠른 문구</label><select id="presetSelect"><option value="">직접 입력</option><option>§a서버에 오신 것을 환영합니다!</option><option>이벤트가 곧 시작됩니다!</option><option>보스가 나타났습니다!</option><option>공지: 서버 점검 안내</option></select></div>
+          </div>
+          <div class="field"><label>텍스트 효과 <span>중복 선택 가능</span></label><div class="format">
+            <button class="fmt" data-fmt="bold"><b>B</b></button><button class="fmt" data-fmt="italic"><i>I</i></button><button class="fmt" data-fmt="underlined"><u>U</u></button><button class="fmt" data-fmt="strikethrough"><s>S</s></button><button class="fmt" data-fmt="obfuscated">▦</button>
+          </div></div>
+          <div class="field"><label>미리보기 컬러</label><div class="color-grid" id="swatches"></div></div>
+          <div class="field" id="timingFields">
+            <label>타이밍 <span>초 → 게임틱으로 자동 변환</span></label>
+            <div class="three">
+              <div><div class="range-row"><input id="fadeIn" type="range" min="0" max="10" step="0.1" value="0.5"><input class="num" id="fadeInNum" type="number" min="0" max="10" step="0.1" value="0.5"></div><div class="note">페이드 인</div></div>
+              <div><div class="range-row"><input id="stay" type="range" min="0" max="30" step="0.1" value="3"><input class="num" id="stayNum" type="number" min="0" max="30" step="0.1" value="3"></div><div class="note">유지 시간</div></div>
+              <div><div class="range-row"><input id="fadeOut" type="range" min="0" max="10" step="0.1" value="0.5"><input class="num" id="fadeOutNum" type="number" min="0" max="10" step="0.1" value="0.5"></div><div class="note">페이드 아웃</div></div>
+            </div>
+          </div>
+          <div class="field"><label>고급 옵션</label><div class="two"><div><label style="margin-bottom:7px">스타일 이름 <span>미리보기만</span></label><select id="stylePreset"><option value="classic">Classic</option><option value="announcement">Announcement</option><option value="event">Event</option><option value="warning">Warning</option></select></div><div><label style="margin-bottom:7px">접두사 <span>채팅 전용</span></label><input id="prefix" type="text" value="[SERVER]" /></div></div><div class="two" style="margin-top:10px"><div><label style="margin-bottom:7px">효과음 <span>타이틀/서브타이틀 자동 추가</span></label><select id="soundSelect"><option value="none" selected>사용 안 함</option><option value="default">발전과제 완료음</option><option value="ui.toast.challenge_complete">Java · 발전과제 완료음</option><option value="note.pling">노트 블록 삑</option><option value="block.note_block.chime">차임</option><option value="random.levelup">레벨업</option></select></div><div><label style="margin-bottom:7px">효과음 설정 <span>볼륨 · 음높이</span></label><div class="two"><input id="soundVolume" type="number" min="0" max="10" step="0.1" value="1" aria-label="효과음 볼륨" /><input id="soundPitch" type="number" min="0" max="2" step="0.1" value="1" aria-label="효과음 음높이" /></div></div></div></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="card-head"><div><h3>👀 게임 화면 미리보기</h3><p>실제 게임 화면처럼 확인</p></div><span class="status-chip" id="typeChip">TITLE</span></div>
+        <div class="preview-wrap">
+          <div class="mc-screen" id="screen">
+            <div class="cloud c1"></div><div class="cloud c2"></div>
+            <div class="panel-info" id="screenInfo">Java · @a</div>
+            <div class="game-ui"><div class="title-text" id="titlePreview">환영합니다!</div><div class="subtitle-text" id="subtitlePreview"></div></div>
+            <div class="chat-preview" id="chatPreview"><span class="name">[SERVER]</span> <span id="chatText">환영합니다!</span></div>
+            <div class="chat-badge">Survival · 20 TPS</div>
+          </div>
+          <div class="output">
+            <div class="card-head" style="padding:0 0 10px;border:0"><div><h3>📜 생성된 명령어</h3><p id="commandCount">2줄</p></div></div>
+            <div class="output-box" id="output"></div>
+            <div class="block-guide" id="blockGuide"></div>
+            <div class="copyrow"><button class="btn primary" id="copyBtn">명령어 전체 복사</button><button class="btn gold" id="copyJsonBtn">텍스트 데이터 복사</button></div>
+            <div class="note" id="platformNote">Java 1.21.5+는 텍스트 컴포넌트를 SNBT 형식으로 생성합니다. 시간은 게임틱(20틱 = 1초)으로 자동 변환됩니다.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <div class="footer">MC Command Forge · 서버 운영자의 반복 작업을 줄이는 작은 제작소</div>
+  </main>
+</div>
+<div class="toast" id="toast">복사했습니다!</div>
+<script>
+  const state = {
+    platform:'java', target:'@a', type:'title', text:'환영합니다!', color:'white', formats:new Set(), fadeIn:.5, stay:3, fadeOut:.5, sound:'none', soundVolume:1, soundPitch:1
+  };
+  const colors = {
+    white:'#ffffff', red:'#ff5555', green:'#55ff55', aqua:'#55ffff', blue:'#5555ff', yellow:'#ffff55', gold:'#ffaa00', light_purple:'#ff55ff', dark_purple:'#aa00aa', gray:'#aaaaaa', dark_gray:'#555555'
+  };
+  const colorLabels = {white:'흰색',red:'빨강',green:'초록',aqua:'하늘색',blue:'파랑',yellow:'노랑',gold:'금색',light_purple:'연보라',dark_purple:'보라',gray:'회색',dark_gray:'짙은 회색'};
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  function cleanText(v){ return v.replace(/§[0-9A-FK-ORa-fk-or]/g,''); }
+  function makeComponent(){
+    const obj = {text: cleanText(state.text || '')};
+    obj.color = state.color;
+    ['bold','italic','underlined','strikethrough','obfuscated'].forEach(k => { if(state.formats.has(k)) obj[k]=true; });
+    return obj;
+  }
+  function snbtString(s){ return JSON.stringify(String(s)); }
+  function toSNBT(c){
+    const parts=["text:"+snbtString(c.text),"color:"+c.color];
+    ['bold','italic','underlined','strikethrough','obfuscated'].forEach(k=>{if(c[k]===true) parts.push(k+':true');});
+    return '{'+parts.join(',')+'}';
+  }
+  function javaChatComponent(){
+    const message=makeComponent();
+    const prefix=String($('#prefix').value||'').trim();
+    if(!prefix) return toSNBT(message);
+    return '{text:'+snbtString(prefix+' ')+',color:gray,extra:['+toSNBT(message)+']}';
+  }
+  function javaCommand(){
+    const json=toSNBT(makeComponent());
+    if(state.type==='chat') return ['/tellraw '+state.target+' '+javaChatComponent()];
+    const result=[
+      '/title '+state.target+' times '+Math.round(state.fadeIn*20)+' '+Math.round(state.stay*20)+' '+Math.round(state.fadeOut*20),
+      '/title '+state.target+' '+state.type+' '+json
+    ];
+    const sound=resolveSound('java');
+    if(sound) result.push('/playsound '+sound+' master '+state.target+' ~ ~ ~ '+state.soundVolume+' '+state.soundPitch);
+    return result;
+  }
+  const bedrockColorCodes={white:'f',red:'c',green:'a',aqua:'b',blue:'9',yellow:'e',gold:'6',light_purple:'d',dark_purple:'5',gray:'7',dark_gray:'8'};
+  const bedrockFormatCodes={bold:'l',italic:'o',underlined:'n',strikethrough:'m',obfuscated:'k'};
+  function bedrockStyledText(text,includeColor=true){
+    const codes=[];
+    if(includeColor && bedrockColorCodes[state.color]) codes.push('§'+bedrockColorCodes[state.color]);
+    ['bold','italic','underlined','strikethrough','obfuscated'].forEach(k=>{if(state.formats.has(k)) codes.push('§'+bedrockFormatCodes[k]);});
+    return codes.join('')+cleanText(text);
+  }
+  function bedrockRaw(){
+    return JSON.stringify({rawtext:[{text:bedrockStyledText(state.text||'')}]});
+  }
+  function bedrockChatRaw(){
+    const prefix=String($('#prefix').value||'').trim();
+    const rawtext=[];
+    if(prefix) rawtext.push({text:'§8'+prefix+' '});
+    rawtext.push({text:bedrockStyledText(state.text||'')});
+    return JSON.stringify({rawtext});
+  }
+  function bedrockCommand(){
+    if(state.type==='chat') return ['/tellraw '+state.target+' '+bedrockChatRaw()];
+    const json=bedrockRaw();
+    const result=[
+      '/titleraw '+state.target+' times '+Math.round(state.fadeIn*20)+' '+Math.round(state.stay*20)+' '+Math.round(state.fadeOut*20),
+      '/titleraw '+state.target+' '+state.type+' '+json
+    ];
+    const sound=resolveSound('bedrock');
+    if(sound){
+      const volume=Math.min(1,Math.max(0,Number(state.soundVolume)||0));
+      const pitch=Math.min(256,Math.max(0,Number(state.soundPitch)||1));
+      result.push('/playsound '+sound+' '+state.target+' ~ ~ ~ '+volume+' '+pitch);
+    }
+    return result;
+  }
+  function resolveSound(platform){
+    if(state.sound==='none') return '';
+    const sounds={
+      default:platform==='java'?'ui.toast.challenge_complete':'random.toast',
+      'ui.toast.challenge_complete':platform==='java'?'ui.toast.challenge_complete':'random.toast',
+      'note.pling':platform==='java'?'block.note_block.pling':'note.pling',
+      'block.note_block.chime':platform==='java'?'block.note_block.chime':'note.chime',
+      'random.levelup':platform==='java'?'entity.player.levelup':'random.levelup'
+    };
+    return sounds[state.sound] || sounds.default;
+  }
+  function commands(){ return state.platform==='java' ? javaCommand() : bedrockCommand(); }
+  function commandLabel(i, total){
+    if(i===0) return {title:'명령 블록', mode:'무조건적 · 레드스톤 필요', activation:'레드스톤 필요', condition:'무조건적'};
+    return {title:'연쇄형 명령 블록', mode:'무조건적 · 항상 활성화', activation:'항상 활성화', condition:'무조건적'};
+  }
+  function renderBlockGuide(comps){
+    const guide=$('#blockGuide');
+    if(comps.length===1){
+      guide.style.display='none';
+      return;
+    }
+    guide.style.display='block';
+    guide.innerHTML=`<div class="block-guide-head"><strong>🧱 커맨드 블록 설치 순서</strong><span>${comps.length}개 · 1번 → 마지막</span></div><div class="block-flow">${comps.map((_,i)=>{const meta=commandLabel(i,comps.length); return `${i?'<span class="flow-arrow">→</span>':''}<div class="block-step"><div class="step-top"><span class="step-no">${i+1}</span><span class="step-type">${meta.title}</span></div><div class="step-mode">${i===0?'첫 블록 · 한 번 실행':'앞 블록에 연결'}</div><div class="block-settings"><span class="block-setting">조건: ${meta.condition}</span><span class="block-setting">활성화: ${meta.activation}</span></div></div>`;}).join('')}</div><div class="guide-tip">① 1번은 <b>명령 블록</b>에 넣고 버튼·레버 등의 레드스톤 신호로 실행합니다. ② 각 블록의 <b>화살표가 다음 연쇄형 명령 블록을 향하도록</b> 일렬로 설치합니다. ③ 2번부터는 <b>연쇄형 명령 블록 + 무조건적 + 항상 활성화</b>로 설정합니다.</div>`;
+  }
+  function setTiming(id, value){
+    const ranges={fadeIn:[0,10],stay:[0,30],fadeOut:[0,10]};
+    const [min,max]=ranges[id];
+    const n=Number(value);
+    state[id]=Number.isFinite(n) ? Math.min(max,Math.max(min,n)) : 0;
+    $('#'+id).value=state[id];
+    $('#'+id+'Num').value=state[id];
+    render();
+  }
+  function renderSwatches(){
+    const wrap=$('#swatches'); wrap.innerHTML='';
+    Object.keys(colors).forEach(k=>{ const b=document.createElement('button'); b.className='swatch'+(state.color===k?' active':''); b.title=colorLabels[k]; b.ariaLabel=colorLabels[k]; b.style.background=colors[k]; b.onclick=()=>{state.color=k; render();}; wrap.appendChild(b); });
+  }
+  function render(){
+    const comps=commands();
+    $('#output').innerHTML=comps.map((x,i)=>{const meta=commandLabel(i,comps.length);const safe=x.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');return `<div class="command-line"><span class="command-prefix">${i+1}</span><span class="command-text">${safe}</span><button class="command-copy" data-command-copy="${encodeURIComponent(x)}">복사</button>${comps.length>1?`<div class="command-meta"><span class="command-tag">${meta.title}</span><span class="command-tag">${meta.mode}</span></div>`:''}</div>`;}).join('');
+    $$('#output [data-command-copy]').forEach(b=>b.onclick=async()=>{const ok=await copyText(decodeURIComponent(b.dataset.commandCopy));toast(ok?'이 명령어를 복사했습니다!':'복사에 실패했습니다.');});
+    renderBlockGuide(comps);
+    $('#commandCount').textContent=`${comps.length}줄`;
+    $('#modeChip').textContent=state.platform==='java'?'JAVA · SNBT':'BEDROCK · RAWR';
+    $('#syntaxHint').textContent=state.platform==='java'?'Java 1.21.5+ SNBT 텍스트 기준':'Bedrock titleraw / tellraw rawtext 기준';
+    $('#screenInfo').textContent=(state.platform==='java'?'Java':'Bedrock')+' · '+state.target;
+    $('#typeChip').textContent=state.type.toUpperCase();
+    $('#titlePreview').textContent=state.type==='title'?cleanText(state.text):'';
+    $('#subtitlePreview').textContent=state.type==='subtitle'?cleanText(state.text):'';
+    $('#chatText').textContent=cleanText(state.text||'채팅 메시지');
+    $('#chatPreview').style.display=state.type==='chat'?'block':'none';
+    $('#titlePreview').style.display=state.type==='title'?'block':'none';
+    $('#subtitlePreview').style.display=state.type==='subtitle'?'block':'none';
+    const styles={fontWeight:state.formats.has('bold')?'1000':'900', fontStyle:state.formats.has('italic')?'italic':'normal', textDecoration:[state.formats.has('underlined')?'underline':'',state.formats.has('strikethrough')?'line-through':''].filter(Boolean).join(' ')||'none'};
+    Object.assign($('#titlePreview').style,styles, {color:colors[state.color]});
+    Object.assign($('#subtitlePreview').style,styles, {color:colors[state.color]});
+    Object.assign($('#chatText').style,styles, {color:colors[state.color]});
+    $('#prefix').style.display=state.type==='chat'?'block':'block';
+    $('#chatPreview').querySelector('.name').textContent=$('#prefix').value || '[SERVER]';
+    $('#timingFields').style.display=state.type==='chat'?'none':'block';
+    $('#platformNote').textContent=state.platform==='java'?'Java 1.21.5+는 /title·/tellraw 텍스트 컴포넌트를 SNBT로 입력합니다. 시간과 효과음은 명령어에 자동으로 추가됩니다.':'Bedrock은 /titleraw·/tellraw의 rawtext JSON을 사용합니다. 타이틀 효과음도 명령어에 자동으로 추가됩니다.';
+    renderSwatches();
+  }
+  async function copyText(text){
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    }catch{}
+    try{
+      const area=document.createElement('textarea');
+      area.value=text;
+      area.setAttribute('readonly','');
+      area.style.position='fixed';
+      area.style.left='-9999px';
+      area.style.top='0';
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      area.setSelectionRange(0, area.value.length);
+      const ok=document.execCommand('copy');
+      area.remove();
+      return ok;
+    }catch{
+      return false;
+    }
+  }
+  function toast(msg){ $('#toast').textContent=msg; $('#toast').classList.add('show'); clearTimeout(window.__toast); window.__toast=setTimeout(()=>$('#toast').classList.remove('show'),1300); }
+  $$('.seg button[data-platform]').forEach(b=>b.onclick=()=>{ $$('.seg button[data-platform]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.platform=b.dataset.platform; render(); });
+  $$('.seg button[data-target]').forEach(b=>b.onclick=()=>{ $$('.seg button[data-target]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.target=b.dataset.target; render(); });
+  $$('.tab').forEach(b=>b.onclick=()=>{ $$('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.type=b.dataset.type; if(state.type==='title'&&!state.text) state.text='환영합니다!'; render(); });
+  $$('.fmt').forEach(b=>b.onclick=()=>{ const k=b.dataset.fmt; state.formats.has(k)?state.formats.delete(k):state.formats.add(k); render(); b.classList.toggle('active',state.formats.has(k)); });
+  $('#textInput').oninput=e=>{state.text=e.target.value;render();};
+  $('#colorSelect').onchange=e=>{state.color=e.target.value;render();};
+  $('#presetSelect').onchange=e=>{ if(e.target.value){ state.text=cleanText(e.target.value); $('#textInput').value=state.text; render(); } };
+  $('#prefix').oninput=render;
+  $('#soundSelect').onchange=e=>{state.sound=e.target.value;render();};
+  $('#soundVolume').oninput=e=>{state.soundVolume=Number(e.target.value);render();};
+  $('#soundPitch').oninput=e=>{state.soundPitch=Number(e.target.value);render();};
+  ['fadeIn','stay','fadeOut'].forEach(id=>{$('#'+id).oninput=e=>setTiming(id,e.target.value); $('#'+id+'Num').oninput=e=>setTiming(id,e.target.value);});
+  $('#copyBtn').onclick=async()=>{const ok=await copyText(commands().join('\n'));toast(ok?'명령어 전체를 복사했습니다!':'복사에 실패했습니다. 직접 선택해 주세요.');};
+  $('#copyJsonBtn').onclick=async()=>{const json=state.platform==='java'?(state.type==='chat'?javaChatComponent():toSNBT(makeComponent())):(state.type==='chat'?bedrockChatRaw():bedrockRaw());const ok=await copyText(json);toast(ok?'텍스트 데이터를 복사했습니다!':'복사에 실패했습니다.');};
+  $('#resetBtn').onclick=()=>{ state.text='환영합니다!';state.color='white';state.formats.clear();state.fadeIn=.5;state.stay=3;state.fadeOut=.5;state.sound='none';state.soundVolume=1;state.soundPitch=1;['fadeIn','stay','fadeOut'].forEach(id=>{$('#'+id).value=state[id];$('#'+id+'Num').value=state[id];});$('#textInput').value=state.text;$('#colorSelect').value='white';$('#soundSelect').value='none';$('#soundVolume').value=1;$('#soundPitch').value=1;$('.tab.active').click();render();toast('설정을 초기화했습니다.'); };
+  render();
+</script>
+</body>
+</html>
